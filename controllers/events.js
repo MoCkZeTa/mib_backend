@@ -1,11 +1,30 @@
 const { StatusCodes } = require('http-status-codes');
 const Event = require('../models/Event');
+const Logs = require('../models/Logs');
 const { NotFoundError, BadRequestError } = require('../errors');
 
 // CREATE Event
 const createEvent = async (req, res) => {
-  req.body.organizedBy = req.user.userID; // authenticated user ID
+  req.body.organizedBy = req.user.userID;
   const event = await Event.create(req.body);
+
+  try {
+    await Logs.create({
+      eventId: event._id,
+      action: 'created',
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      organiserName: req.user.name,
+      performedBy: req.user.userID,
+    });
+  } catch (logErr) {
+    console.error('❌ Failed to create log:', logErr.message);
+  }
+
   res.status(StatusCodes.CREATED).json({ event });
 };
 
@@ -21,22 +40,33 @@ const deleteEvent = async (req, res) => {
     throw new NotFoundError(`No event found with ID ${eventId}`);
   }
 
+  try {
+    await Logs.create({
+      eventId: event._id,
+      action: 'deleted',
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      organiserName: req.user.name,
+      performedBy: req.user.userID,
+    });
+  } catch (logErr) {
+    console.error('❌ Failed to log event deletion:', logErr.message);
+  }
+
   res.status(StatusCodes.OK).json({ msg: 'Event deleted' });
 };
 
-// GET All Events (created by user)
-// const getAllEvents = async (req, res) => {
-//   const events = await Event.find({ });
-//   res.status(StatusCodes.OK).json({ events, count: events.length });
-// };
-
+// GET All Events
 const getAllEvents = async (req, res) => {
   const events = await Event.find({})
-    .populate({ path: 'organizedBy', select: 'name' }); // populate only the 'name'
+    .populate({ path: 'organizedBy', select: 'name' });
 
-  // Map to add 'organiserName' and remove full 'organizedBy' object
   const modifiedEvents = events.map(event => {
-    const eventObj = event.toObject(); // convert Mongoose document to plain JS object
+    const eventObj = event.toObject();
     eventObj.organiserName = eventObj.organizedBy?.name || "Unknown";
     delete eventObj.organizedBy;
     return eventObj;
@@ -62,6 +92,23 @@ const updateEvent = async (req, res) => {
 
   if (!event) {
     throw new NotFoundError(`No event found with ID ${eventId}`);
+  }
+
+  try {
+    await Logs.create({
+      eventId: event._id,
+      action: 'updated',
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      organiserName: req.user.name,
+      performedBy: req.user.userID,
+    });
+  } catch (logErr) {
+    console.error('❌ Failed to log event update:', logErr.message);
   }
 
   res.status(StatusCodes.OK).json({ event });
