@@ -37,15 +37,32 @@ const deleteEvent = async (req, res) => {
 
 const updateEvent = async (req, res) => {
   const { id: eventId } = req.params;
-  const { title, date, time, location } = req.body;
+  const {
+    title,
+    date,
+    time,
+    location,
+    description,
+    category
+  } = req.body;
 
-  if (!title || !date || !time || !location) {
-    throw new BadRequestError('All fields are required');
+  // Only keep provided fields
+  const fieldsToUpdate = {};
+  if (title) fieldsToUpdate.title = title;
+  if (date) fieldsToUpdate.date = date;
+  if (time) fieldsToUpdate.time = time;
+  if (location) fieldsToUpdate.location = location;
+  if (description) fieldsToUpdate.description = description;
+  if (category) fieldsToUpdate.category = category;
+
+  // If no fields provided, return error
+  if (Object.keys(fieldsToUpdate).length === 0) {
+    throw new BadRequestError('At least one field must be provided to update');
   }
 
   const event = await Event.findOneAndUpdate(
-    { _id: eventId, organizedBy: req.user.userID },
-    req.body,
+    { _id: eventId},
+    fieldsToUpdate,
     { new: true, runValidators: true }
   );
 
@@ -62,22 +79,8 @@ const updateEvent = async (req, res) => {
   res.status(StatusCodes.OK).json({ event });
 };
 
-const getAllEvents = async (req, res) => {
-  const events = await Event.find({}).populate({
-    path: 'organizedBy',
-    select: 'name',
-  });
 
-  const modifiedEvents = events.map(event => {
-    const obj = event.toObject();
-    obj.organiserName = obj.organizedBy?.name || 'Unknown';
-    delete obj.organizedBy;
-    return obj;
-  });
-
-  res.status(StatusCodes.OK).json({ events: modifiedEvents, count: modifiedEvents.length });
-};
-
+// GET Single Event
 const getEvent = async (req, res) => {
   const { id: eventId } = req.params;
   const event = await Event.findOne({
