@@ -92,6 +92,11 @@ const getEvent = async (req, res) => {
   res.status(StatusCodes.OK).json({ event });
 };
 
+const getAllEvents = async (req, res) => {
+  const events = await Event.find({ organizedBy: req.user.userID });
+  res.status(StatusCodes.OK).json({ events });
+};
+
 module.exports = {
   createEvent,
   deleteEvent,
