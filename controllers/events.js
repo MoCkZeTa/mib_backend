@@ -26,7 +26,7 @@ const deleteEvent = async (req, res) => {
 
 // GET All Events (created by user)
 const getAllEvents = async (req, res) => {
-  const events = await Event.find({ organizedBy: req.user.userID });
+  const events = await Event.find({ });
   res.status(StatusCodes.OK).json({ events, count: events.length });
 };
 
