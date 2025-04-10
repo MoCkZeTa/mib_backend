@@ -77,15 +77,32 @@ const getAllEvents = async (req, res) => {
 // UPDATE Event
 const updateEvent = async (req, res) => {
   const { id: eventId } = req.params;
-  const { title, date, time, location } = req.body;
+  const {
+    title,
+    date,
+    time,
+    location,
+    description,
+    category
+  } = req.body;
 
-  if (!title || !date || !time || !location) {
-    throw new BadRequestError('Title, Date, Time, and Location are required');
+  // Only keep provided fields
+  const fieldsToUpdate = {};
+  if (title) fieldsToUpdate.title = title;
+  if (date) fieldsToUpdate.date = date;
+  if (time) fieldsToUpdate.time = time;
+  if (location) fieldsToUpdate.location = location;
+  if (description) fieldsToUpdate.description = description;
+  if (category) fieldsToUpdate.category = category;
+
+  // If no fields provided, return error
+  if (Object.keys(fieldsToUpdate).length === 0) {
+    throw new BadRequestError('At least one field must be provided to update');
   }
 
   const event = await Event.findOneAndUpdate(
-    { _id: eventId, organizedBy: req.user.userID },
-    req.body,
+    { _id: eventId},
+    fieldsToUpdate,
     { new: true, runValidators: true }
   );
 
@@ -112,6 +129,7 @@ const updateEvent = async (req, res) => {
 
   res.status(StatusCodes.OK).json({ event });
 };
+
 
 // GET Single Event
 const getEvent = async (req, res) => {
