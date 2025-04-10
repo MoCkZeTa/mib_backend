@@ -33,7 +33,6 @@ const deleteEvent = async (req, res) => {
   const { id: eventId } = req.params;
   const event = await Event.findOneAndDelete({
     _id: eventId,
-    organizedBy: req.user.userID,
   });
 
   if (!event) {
