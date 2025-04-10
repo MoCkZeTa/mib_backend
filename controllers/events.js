@@ -25,9 +25,24 @@ const deleteEvent = async (req, res) => {
 };
 
 // GET All Events (created by user)
+// const getAllEvents = async (req, res) => {
+//   const events = await Event.find({ });
+//   res.status(StatusCodes.OK).json({ events, count: events.length });
+// };
+
 const getAllEvents = async (req, res) => {
-  const events = await Event.find({ });
-  res.status(StatusCodes.OK).json({ events, count: events.length });
+  const events = await Event.find({})
+    .populate({ path: 'organizedBy', select: 'name' }); // populate only the 'name'
+
+  // Map to add 'organiserName' and remove full 'organizedBy' object
+  const modifiedEvents = events.map(event => {
+    const eventObj = event.toObject(); // convert Mongoose document to plain JS object
+    eventObj.organiserName = eventObj.organizedBy?.name || "Unknown";
+    delete eventObj.organizedBy;
+    return eventObj;
+  });
+
+  res.status(StatusCodes.OK).json({ events: modifiedEvents, count: modifiedEvents.length });
 };
 
 // UPDATE Event
