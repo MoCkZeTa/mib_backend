@@ -11,7 +11,7 @@ const createEvent = async (req, res) => {
     performedBy: req.user.userID,
     action: 'created',
     eventId: event._id,
-    title: event.title, // Save title to logs
+    title: event.title,
     timestamp: new Date(),
   });
 
@@ -25,7 +25,6 @@ const deleteEvent = async (req, res) => {
 
   if (!event) throw new NotFoundError(`No event found with ID ${eventId}`);
 
-  // Log before deletion
   await Logs.create({
     performedBy: req.user.userID,
     action: 'deleted',
@@ -42,16 +41,8 @@ const deleteEvent = async (req, res) => {
 
 const updateEvent = async (req, res) => {
   const { id: eventId } = req.params;
-  const {
-    title,
-    date,
-    time,
-    location,
-    description,
-    category
-  } = req.body;
+  const { title, date, time, location, description, category } = req.body;
 
-  // Only keep provided fields
   const fieldsToUpdate = {};
   if (title) fieldsToUpdate.title = title;
   if (date) fieldsToUpdate.date = date;
@@ -95,8 +86,10 @@ const getEvent = async (req, res) => {
   res.status(StatusCodes.OK).json({ event });
 };
 
+// ✅ UPDATED FUNCTION
 const getAllEvents = async (req, res) => {
-  const events = await Event.find({ organizedBy: req.user.userID });
+  const events = await Event.find({ organizedBy: req.user.userID })
+    .populate('organizedBy', 'name'); // Populate with user name
   res.status(StatusCodes.OK).json({ events });
 };
 
