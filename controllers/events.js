@@ -11,7 +11,8 @@ const createEvent = async (req, res) => {
     performedBy: req.user.userID,
     action: 'created',
     eventId: event._id,
-    timestamp: new Date(), // ⬅️ Added
+    title: event.title, // Save title to logs
+    timestamp: new Date(),
   });
 
   req.app.get('io').emit('logUpdated');
@@ -20,16 +21,20 @@ const createEvent = async (req, res) => {
 
 const deleteEvent = async (req, res) => {
   const { id: eventId } = req.params;
-  const event = await Event.findOneAndDelete({ _id: eventId });
+  const event = await Event.findOne({ _id: eventId });
 
   if (!event) throw new NotFoundError(`No event found with ID ${eventId}`);
 
+  // Log before deletion
   await Logs.create({
     performedBy: req.user.userID,
     action: 'deleted',
     eventId: event._id,
-    timestamp: new Date(), // ⬅️ Added
+    title: event.title,
+    timestamp: new Date(),
   });
+
+  await Event.deleteOne({ _id: eventId });
 
   req.app.get('io').emit('logUpdated');
   res.status(StatusCodes.OK).json({ msg: 'Event deleted' });
@@ -55,13 +60,12 @@ const updateEvent = async (req, res) => {
   if (description) fieldsToUpdate.description = description;
   if (category) fieldsToUpdate.category = category;
 
-  // If no fields provided, return error
   if (Object.keys(fieldsToUpdate).length === 0) {
     throw new BadRequestError('At least one field must be provided to update');
   }
 
   const event = await Event.findOneAndUpdate(
-    { _id: eventId},
+    { _id: eventId },
     fieldsToUpdate,
     { new: true, runValidators: true }
   );
@@ -72,15 +76,14 @@ const updateEvent = async (req, res) => {
     performedBy: req.user.userID,
     action: 'updated',
     eventId: event._id,
-    timestamp: new Date(), // ⬅️ Added
+    title: event.title,
+    timestamp: new Date(),
   });
 
   req.app.get('io').emit('logUpdated');
   res.status(StatusCodes.OK).json({ event });
 };
 
-
-// GET Single Event
 const getEvent = async (req, res) => {
   const { id: eventId } = req.params;
   const event = await Event.findOne({

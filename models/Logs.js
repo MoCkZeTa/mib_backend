@@ -12,6 +12,10 @@ const LogsSchema = new mongoose.Schema(
       ref: 'Event',
       required: true,
     },
+    title: {
+      type: String,
+      required: true,
+    },
     action: {
       type: String,
       enum: ['created', 'updated', 'deleted'],
@@ -19,7 +23,7 @@ const LogsSchema = new mongoose.Schema(
     },
     timestamp: {
       type: Date,
-      default: Date.now, // ⬅️ Automatically set timestamp if not provided
+      default: Date.now,
     },
   },
   { versionKey: false }
